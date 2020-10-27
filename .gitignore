@@ -2,5 +2,6 @@ obj
 bin
 .idea
 .vscode
+.vs
 appsettings.json
 *.db
