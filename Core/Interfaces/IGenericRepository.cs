@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Core.Entities;
 using Core.Specifications;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Core.Interfaces
 {
@@ -12,5 +13,6 @@ namespace Core.Interfaces
 
     Task<T> GetEntityWithSpec(ISpecification<T> spec);
     Task<IReadOnlyList<T>> ListAllAsyncWithSpec(ISpecification<T> spec);
+    Task<int> CountAsync(ISpecification<T> spec);
   }
 }
