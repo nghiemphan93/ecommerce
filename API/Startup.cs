@@ -1,29 +1,26 @@
-using System.Linq;
-using API.Errors;
 using API.Extensions;
 using API.Helpers;
 using API.Middleware;
 using AutoMapper;
 using Core.Interfaces;
 using Infrastructure.Data;
+using Infrastructure.Identity;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
 
 namespace API
 {
   public class Startup
   {
-    private readonly IConfiguration _configuration;
+    private readonly IConfiguration _config;
 
-    public Startup(IConfiguration configuration)
+    public Startup(IConfiguration config)
     {
-      _configuration = configuration;
+      _config = config;
     }
 
     // This method gets called by the runtime. Use this method to add services to the container.
@@ -32,9 +29,22 @@ namespace API
       services.AddAutoMapper(typeof(MappingProfiles));
       services.AddControllers();
       services.AddDbContext<StoreContext>(x =>
-        x.UseSqlite(_configuration.GetConnectionString("DefaultConnection")));
+        x.UseSqlite(_config.GetConnectionString("DefaultConnection")));
+
+      services.AddDbContext<AppIdentityDbContext>(options =>
+      {
+        options.UseSqlite(_config.GetConnectionString("IdentityConnection"));
+      });
+
+      services.AddScoped<IBasketRepository, BasketRepository>();
+      services.AddSingleton<IConnectionMultiplexer>(c =>
+      {
+        var config = ConfigurationOptions.Parse(_config.GetConnectionString("Redis"), true);
+        return ConnectionMultiplexer.Connect(config);
+      });
 
       services.AddApplicationServices();
+      services.AddIdentityServices(_config);
       services.AddSwaggerDocumentation();
       services.AddCors(options =>
       {
@@ -62,6 +72,7 @@ namespace API
 
       app.UseCors("CorsPolicy");
 
+      app.UseAuthentication();
       app.UseAuthorization();
 
       app.UseSwaggerDocumentation();
